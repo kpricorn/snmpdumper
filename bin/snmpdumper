@@ -1,0 +1,46 @@
+#!/usr/bin/env ruby
+# == Synopsis
+#
+# snmpdumper: a simple yet powerful snmp dumper
+#
+# == Usage
+#
+# snmpscan [OPTION] ip
+#
+# -h, --help:
+#    show help
+#
+# --timeout x, -t x:
+#    timeout x milliseconds (for faster scans), default 1 second
+#
+# --comunity c, -c c
+#    comunity string, default "public"
+#
+# --protocol p, -p p
+#    version of the protocolo, defaults to 2c
+#
+# --version, -v
+#    version of the software
+#
+# --verbose, -V
+#    be verbose in output
+#
+# ip: An ip in the form 192.168.1.1
+#
+# == Examples
+#
+# snmpdumper 192.168.1.1
+#    Scans host 192.168.1.1 with default values 
+#
+# snmpscan -t 200 -c comread 192.168.1.1
+#    Scans with comunity password "comread"
+#    and a timeout value of 200 milliseconds
+#
+# == Author and license
+#    Written by Sebastian de Castelberg
+#    Distributed under the same license as Ruby is
+#
+
+require 'rubygems'
+require 'snmpdumper'
+SnmpDumper.dump(ARGV)
