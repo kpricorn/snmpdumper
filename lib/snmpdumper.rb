@@ -1,5 +1,5 @@
 $:.unshift File.dirname(__FILE__)
-%w( rubygems fileutils snmp builder getoptlong rdoc/usage).each { |f| require f }
+%w(fileutils snmp builder getoptlong rdoc/usage).each { |f| require f }
 RUBY_PLATFORM = PLATFORM unless defined? RUBY_PLATFORM   # Ruby 1.8 compatibility
 
 module SnmpDumper
