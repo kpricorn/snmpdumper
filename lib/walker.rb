@@ -1,10 +1,6 @@
-$:.unshift File.dirname(__FILE__)
-%w(fileutils snmp builder getoptlong rdoc/usage).each { |f| require f }
-RUBY_PLATFORM = PLATFORM unless defined? RUBY_PLATFORM   # Ruby 1.8 compatibility
+%w(fileutils snmp builder pp).each { |f| require f }
 
 module SnmpDumper
-  extend self
-
   GENERIC_VALUE_CALLBACK = lambda do |value_set, name, values| 
     value = values.first
     value_set.JSVALUE("value" => value)
@@ -53,7 +49,7 @@ module SnmpDumper
     attr_accessor :model
     attr_accessor :snmp_vars
 
-    def to_s
+    def dump
       builder = Builder::XmlMarkup.new(:indent=>2)
       builder.JSSNMPDEVICE("category" => "windows", "model" => "Microsoft Windows 2003") do |jssnmpdevice|
         self.snmp_vars.values.each do |snmp_var|
@@ -80,128 +76,45 @@ module SnmpDumper
     end
   end
 
-  def dump(args)
-    args = args.dup
-    return unless parse_args(args)
+  class Walker
+    def initialize(options)
+      @options = options
+    end
 
+    def walk
+      device = SnmpDevice.new
+      device.snmp_vars = Hash.new
 
+      snmpconfig = { :Host => @options.host}
 
-    device = SnmpDevice.new
-    device.snmp_vars = Hash.new
+      if @options.version == :SNMPv3 then
+        snmpconfig.merge Hash.new(:Community => 'tacmon', :Version => @options.version)
+      else
+        snmpconfig.merge Hash.new(:Community => 'tacmon', :Version => @options.version)
+      end
+      
 
-    snmpconfig ={ :Host => '172.27.174.72', :Community => 'tacmon', :Version => :SNMPv2c}
+      manager = SNMP::Manager.new(snmpconfig)
 
-    manager = SNMP::Manager.new(snmpconfig)
-
-    oids = [
-      "1",
-      "1.3.6.1.4.1.9.2.1.40.0",
-      "1.3.6.1.4.1.9.2.1.41.0",
-      "1.3.6.1.4.1.9.2.1.42.0",
-      "1.3.6.1.4.1.9.2.1.43.0",
-      "1.3.6.1.4.1.9.2.1.44.0",
-      "1.3.6.1.4.1.9.2.1.45.0",
-      "1.3.6.1.4.1.9.2.1.46.0",
-      "1.3.6.1.4.1.9.2.1.47.0",
-      "1.3.6.1.4.1.9.2.1.48.0",
-      "1.3.6.1.4.1.9.2.1.49.0",
-      "1.3.6.1.4.1.9.2.4.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.3.1.1.2.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.3.1.1.3.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.3.1.1.4.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.3.1.1.5.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.3.1.1.6.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.3.1.1.7.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.4.1.1.10.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.4.1.1.11.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.4.1.1.12.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.4.1.1.2.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.4.1.1.3.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.4.1.1.4.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.4.1.1.5.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.4.1.1.6.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.4.1.1.7.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.4.1.1.8.1.1",
-      "1.3.6.1.4.1.9.9.10.1.1.4.1.1.9.1.1",
-      "1.3.6.1.4.1.9.9.106.1.1.1.0",
-      "1.3.6.1.4.1.9.2.1",
-      "1.3.6.1.4.1.9.2.2",
-      "1.3.6.1.4.1.9.3.6",
-      "1.3.6.1.4.1.9.2.9",
-      "1.3.6.1.4.1.9.2.10",
-      "1.3.6.1.4.1.9.9.10",
-      "1.3.6.1.4.1.9.9.23",
-      "1.3.6.1.4.1.9.9.46",
-      "1.3.6.1.4.1.9.9.48",
-      "1.3.6.1.4.1.9.9.68",
-      "1.3.6.1.4.1.9.9.87",
-      "1.3.6.1.4.1.9.9.109",
-      "1.3.6.1.4.1.9.1.324",
-      "1.3.6.1.4.1.9.9.134"
-    ]
-
-    (1..2).each do |i|
-      oids.each do |oid|
-        begin
-          manager.walk(oid) do |var_bind|
-            device.snmp_vars["#{var_bind.name}"] ||= SnmpVar.new(:name => var_bind.name)
-            # print device.snmp_vars["#{var_bind.name}"].values.size.to_s + " (" + device.snmp_vars["#{var_bind.name}"].values.inspect + ") -> "
-            device.snmp_vars["#{var_bind.name}"].values << var_bind.value
-            # puts device.snmp_vars["#{var_bind.name}"].values.size.to_s + " (" + device.snmp_vars["#{var_bind.name}"].values.inspect + ")"
+      (1..@options.walks).each do |i|
+       @options.oids.each do |oid|
+          begin
+            manager.walk(oid) do |var_bind|
+              device.snmp_vars["#{var_bind.name}"] ||= SnmpVar.new(:name => var_bind.name)
+              # print device.snmp_vars["#{var_bind.name}"].values.size.to_s + " (" + device.snmp_vars["#{var_bind.name}"].values.inspect + ") -> "
+              device.snmp_vars["#{var_bind.name}"].values << var_bind.value
+              # puts device.snmp_vars["#{var_bind.name}"].values.size.to_s + " (" + device.snmp_vars["#{var_bind.name}"].values.inspect + ")"
+            end
+          rescue SNMP::RequestTimeout => e
+            raise e if device.snmp_vars.empty?
           end
-        rescue SNMP::RequestTimeout => e
-          raise e if device.snmp_vars.empty?
+          
+          sleep @options.interval
         end
       end
+      puts device.dump
+
+      manager.close
     end
-    puts device.to_s
-
-    manager.close
-
-  end
-
-  def parse_args(args)
-    opts = GetoptLong.new([ '--help', '-h', GetoptLong::NO_ARGUMENT ],
-                          [ '--version', '-v', GetoptLong::NO_ARGUMENT ],
-                          [ '--verbose', '-V', GetoptLong::NO_ARGUMENT ],
-                          [ '--timeout', '-t', GetoptLong::REQUIRED_ARGUMENT ],
-                          [ '--mib', '-m', GetoptLong::REQUIRED_ARGUMENT ],
-                          [ '--protocol', '-p', GetoptLong::REQUIRED_ARGUMENT ],
-                          [ '--comunity', '-c', GetoptLong::REQUIRED_ARGUMENT ]
-                          )
-
-    # Defaults
-    timeout = 1000
-    mib = "sysDescr.0"
-    protocol = "2c"
-    comunity = "public"
-    verbose = false
-
-    opts.each do |opt, arg|
-      case opt
-      when '--help'
-        RDoc::usage
-      when '--version'
-        puts "snmpscan, version #$VERSION"
-        exit 0
-      when '--timeout'
-        timeout = arg.to_i
-      when '--mib'
-        mib = arg
-        unless mib =~ /\.\d+$/
-          mib += ".0"
-        end
-      when '--protocol'
-        protocol = arg
-      when '--comunity'
-        comunity = arg
-      when '--verbose'
-        verbose = true
-      end
-    end
-    
-    true
   end
 end
-
-SnmpDumper.sheets(ARGV) if __FILE__ == $0
