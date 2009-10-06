@@ -1,17 +1,19 @@
 require 'optparse'
 require 'ostruct'
+require 'pp'
 
 module SnmpDumper
   class Options
     SNMP_VERSIONS = {"1" => :SNMPv1, "2c" => :SNMPv2c, "3" => :SNMPv3}
     DEFAULT_PORT = 161
-    DEFAULT_VERSION = SNMP_VERSIONS[:SNMPv2c]
 
     DEFAULT_INTERVAL = 10
     DEFAULT_WALKS = 3
 
     DEFAULT_COMMUNITY = "public"
 
+    DEFAULT_CATEGORY = "snmpdumper"
+    
     attr_reader :options
 
     def initialize(argv)
@@ -70,11 +72,10 @@ module SnmpDumper
         "1.3.6.1.4.1.9.1.324",
         "1.3.6.1.4.1.9.9.134"
       ]
-      
-      @options.version = "2c"
-      @options.debug = false
-      @options.community = DEFAULT_COMMUNITY
 
+      @options.version = :SNMPv2c
+      @options.community = DEFAULT_COMMUNITY
+      @options.category = DEFAULT_CATEGORY
 
       opts = OptionParser.new do |opts|
         opts.banner = "Usage: snmpdumper [options] host [oids]"
@@ -82,49 +83,61 @@ module SnmpDumper
         opts.separator ""        
         opts.separator "Specific options:"
 
-        opts.on("-p", "--port", Integer, "SNMP agent port  (Default: #{DEFAULT_INTERVAL})") do |port|
+        opts.on("-p", "--port PORT", Integer, "SNMP agent port  (Default: #{DEFAULT_INTERVAL})") do |port|
           @options.port = port
         end
 
-        opts.on("-i", "--interval", Integer, "walk interval in seconds (Default: #{DEFAULT_INTERVAL})") do |interval|
+        opts.on("-i", "--interval INTERVAL", Integer, "walk interval in seconds (Default: #{DEFAULT_INTERVAL})") do |interval|
           @options.interval = interval
         end
 
-        opts.on("-w", "--walks", Integer, "number of walks (Default: #{DEFAULT_WALKS})") do |walks|
+        opts.on("-w walks", "--walks WALKS", Integer, "number of walks (Default: #{DEFAULT_WALKS})") do |walks|
           @options.walks = walks
         end
+
+        opts.on("-o", "--output FILENAME", "file to save SNMP dump") do |filename|
+          @options.filename = filename
+        end
+        
+        opts.on("-m", "--model MODELNAME", "model name (Default: dynamically taken from sysDescr)") do |model|
+          @options.model = model
+        end
+        
+        opts.on("-C", "--category CATEGORY", "category name (Default: #{DEFAULT_CATEGORY})") do |category|
+          @options.category = category
+        end        
 
         opts.separator ""
         opts.separator "snmpwalk options:"
 
-        opts.on("-r", "--retries", Integer, "set the number of retries") do |retries|
+        opts.on("-r", "--retries RETRIES", Integer, "set the number of retries") do |retries|
           @options.retries = retries
         end
 
-        opts.on("-t", "--timeout", Integer, "set the request timeout (in seconds)") do |timeout|
+        opts.on("-t", "--timeout TIMEOUT", Integer, "set the request timeout (in seconds)") do |timeout|
           @options.timeout = timeout
         end
 
-        opts.on("-v [VERSION]", SNMP_VERSIONS,
+        opts.on("-v VERSION", SNMP_VERSIONS,
         "specifies SNMP version to use #{SNMP_VERSIONS.keys.join(', ')} (Default: #{@options.version})") do |version|
-          options.version = version if version
+          options.version =  version if version
         end
 
         opts.separator ""
         opts.separator "SNMP Version 1 or 2c specific:"
 
-        opts.on("-c [community]", "--community [community]", "set the community string") do |community|
+        opts.on("-c", "--community COMMUNITY", "set the community string") do |community|
           @options.community = community
         end
 
         opts.separator ""
         opts.separator "SNMP Version 3 specific:"
 
-        opts.on("-A [PASSPHRASE]", "set authentication protocol pass phrase") do |auth_passphrase|
+        opts.on("-A PASSPHRASE", "set authentication protocol pass phrase") do |auth_passphrase|
           @options.auth_passphrase = auth_passphrase
         end
 
-        opts.on("-X [PASSPHRASE]", "set privacy protocol pass phrase") do |privacy_passphrase|
+        opts.on("-X PASSPHRASE", "set privacy protocol pass phrase") do |privacy_passphrase|
           @options.privacy_passphrase = privacy_passphrase
         end
 
@@ -132,7 +145,7 @@ module SnmpDumper
         opts.separator "Common options:"
 
         opts.on("-d", "--[no-]debug", "print debug messages") do |d|
-          @options.debug = d
+          $DEBUG = d
         end
 
         opts.on("-h", "--help", "display this help message") do 
@@ -146,18 +159,23 @@ module SnmpDumper
         end
 
         begin
-          argv = ["-h"] if argv.empty?
           opts.parse!(argv)
-          raise OptionParser::MissingArgument.new(@options.community) if 
+          raise OptionParser::MissingArgument.new("Please provide AUTH and PRIVACY passphrase") if 
           @options.version == :SNMPv3 && 
           (@options.auth_passphrase.nil? || @options.privacy_passphrase.nil?)
+
+          raise OptionParser::MissingArgument.new("No hostname provided") if argv.empty?
+
+          @options.host = argv.shift
+          @options.oids = argv unless argv.empty?
+
+          STDERR.puts @options if $DEBUG
+
         rescue OptionParser::ParseError => e
           STDERR.puts e.message, "\n", opts
           exit(-1)
         end
 
-        @options.host = argv.shift
-        @options.oids = argv
 
       end #OptionParser.new
 

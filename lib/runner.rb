@@ -10,7 +10,13 @@ module SnmpDumper
     
     def run
       walker = Walker.new(@options.options)
-      walker.walk
+      begin
+        walker.walk
+      rescue Exception => e
+        STDERR.puts e.message
+        exit -1
+      end
+      exit 0
     end
   end
 end
