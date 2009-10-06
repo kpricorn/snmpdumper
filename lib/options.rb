@@ -11,8 +11,8 @@ module SnmpDumper
     DEFAULT_WALKS = 3
 
     DEFAULT_COMMUNITY = "public"
-
     DEFAULT_CATEGORY = "snmpdumper"
+    DEFAULT_DUMPER = "JalasoftDumper"
     
     attr_reader :options
 
@@ -76,6 +76,7 @@ module SnmpDumper
       @options.version = :SNMPv2c
       @options.community = DEFAULT_COMMUNITY
       @options.category = DEFAULT_CATEGORY
+      @options.dumper = DEFAULT_DUMPER
 
       opts = OptionParser.new do |opts|
         opts.banner = "Usage: snmpdumper [options] host [oids]"
@@ -83,7 +84,7 @@ module SnmpDumper
         opts.separator ""        
         opts.separator "Specific options:"
 
-        opts.on("-p", "--port PORT", Integer, "SNMP agent port  (Default: #{DEFAULT_INTERVAL})") do |port|
+        opts.on("-p", "--port PORT", Integer, "SNMP agent port  (Default: #{DEFAULT_PORT})") do |port|
           @options.port = port
         end
 
@@ -105,8 +106,12 @@ module SnmpDumper
         
         opts.on("-C", "--category CATEGORY", "category name (Default: #{DEFAULT_CATEGORY})") do |category|
           @options.category = category
+        end
+        
+        opts.on("-D", "--dumper DUMPER_CLASS", "which dumper to use (Default: #{DEFAULT_DUMPER})") do |dumper|
+          @options.dumper = dumper
         end        
-
+        
         opts.separator ""
         opts.separator "snmpwalk options:"
 
