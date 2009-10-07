@@ -1,0 +1,28 @@
+= snmpdumper - create snmpdumps for 3rd party tools
+ 
+This tool dumps snmp walks into a set of output formats.
+ 
+* Plain Text (same as running snmpwalk)
+* Jalasoft Device Dump (http://www.jalasoft.com)
+
+== Sample Workflows
+ 
+Create an SNMP Device Dump for jalasoft Simulator of a Cisco SNMP Agent running on 192.168.1.10
+and store it in ./cisco.xml.
+ 
+  snmpdump -D JalasoftDumper -C "Cisco Switches" -o ./cisco.xml 192.168.1.10
+ 
+== Setup
+ 
+  gem install snmp
+  gem install snmpdumper
+ 
+== Meta
+ 
+Created and maintained by Sebastian de Castelberg
+ 
+Patches contributed by: -
+ 
+Released under the MIT license: http://www.opensource.org/licenses/mit-license.php
+ 
+http://github.com/sdecastelberg/snmpdumper

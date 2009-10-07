@@ -1,5 +1,4 @@
 require 'walker'
-require 'dumper'
 require 'options'
 
 Dir.glob(File.join(File.dirname(__FILE__), 'dumper/*.rb')).each {|f| require f }

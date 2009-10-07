@@ -1,12 +1,8 @@
-require 'dumper'
-
 module SnmpDumper
   class SimpleTextDumper
     attr_accessor :model
     attr_accessor :category
     
-    include Dumper
-
     def initialize(options)
     end
     

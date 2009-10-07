@@ -1,4 +1,4 @@
-require 'dumper'
+%w(builder).each { |f| require f }
 
 module SnmpDumper
   GENERIC_VALUE_CALLBACK = lambda do |value_set, name, values| 
@@ -34,6 +34,7 @@ module SnmpDumper
 
   DATA_TYPE_MAP = {
     SNMP::Counter32 => {:syntax => "COUNTER", :callback => GENERIC_VALUE_CALLBACK},
+    SNMP::Counter64 => {:syntax => "COUNTER", :callback => GENERIC_VALUE_CALLBACK},
     SNMP::Gauge32 => {:syntax => "GAUGE", :callback => GENERIC_VALUE_CALLBACK},
     SNMP::Integer => {:syntax => "INTEGER", :callback => INTEGER_VALUE_CALLBACK},
     SNMP::IpAddress => {:syntax => "IPADDRESS", :callback => GENERIC_VALUE_CALLBACK},
@@ -41,9 +42,9 @@ module SnmpDumper
     SNMP::OctetString => {:syntax => "OCTETSTRING", :callback => OCTETSTRING_VALUE_CALLBACK},
     SNMP::TimeTicks => {:syntax => "TIMETICKS", :callback => TIMETICKS_VALUE_CALLBACK}
   }
+  
   class SnmpVar
     attr_accessor :name, :values
-
     def initialize(args)
       raise ArgumentError.new("Wrong paramters: ") unless args[:name]
       self.name = args[:name]
@@ -52,7 +53,8 @@ module SnmpDumper
 
     def dump(jssnmpdevice)
       jssnmpdevice.JSSNMPVAR do |jssnmpvar|
-        jssnmpvar.JSOID("syntax" => DATA_TYPE_MAP[values.first.class][:syntax], "value" => name)
+        syntax_hash = DATA_TYPE_MAP[values.first.class] || {:syntax => "OCTETSTRING", :callback => OCTETSTRING_VALUE_CALLBACK}
+        jssnmpvar.JSOID("syntax" => syntax_hash[:syntax], "value" => name)
         jssnmpvar.JSVALUESET { |value_set| DATA_TYPE_MAP[values.first.class][:callback].call(value_set, name, values) }
       end
     end
@@ -65,8 +67,6 @@ module SnmpDumper
     attr_accessor :model
     attr_accessor :category
 
-    include Dumper
-
     def dump
       builder = Builder::XmlMarkup.new(:indent=>2)
       builder.JSSNMPDEVICE("category" => @category, "model" => @model) do |jssnmpdevice|
@@ -76,10 +76,16 @@ module SnmpDumper
       end
     end
 
+    def add_snmp_var(args)
+      raise ArgumentError.new("Invalid arguments") unless args[:name] && args[:value]
+      @snmp_vars[args[:name]] ||= SnmpVar.new(:name => args[:name])
+      @snmp_vars[args[:name]].values << args[:value]
+    end
 
     def initialize(options)
       @model = options.model
       @category = options.category
+      @snmp_vars = Hash.new
     end
 
   end
