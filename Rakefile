@@ -2,7 +2,11 @@ require 'rubygems'
 require 'rake'
 
 PACKAGE_NAME    = "snmpdumper"
-PACKAGE_VERSION = "0.0.1"
+PACKAGE_VERSION = "0.0.2"
+DEPENDENCIES = [
+  ["snmp", "1.0.2" ], 
+  ["builder", "2.1.2"]
+]
 
 SOURCE_FILES = FileList.new do |fl|
   [ "bin", "lib", "test" ].each do |dir|
@@ -16,8 +20,6 @@ PACKAGE_FILES = FileList.new do |fl|
   fl.include "LICENSE"
   fl.include SOURCE_FILES
 end
-
-Gem.manage_gems
 
 desc "Default task"
 task :default => [ :package ]
@@ -62,7 +64,7 @@ file "#{package_dir}/#{gem_file}" => SOURCE_FILES + [ package_dir ] do
     s.platform = Gem::Platform::RUBY
     s.date = Time.now
     s.summary = "Dumps SNMP walk output in different format."
-    s.description = ""
+    s.description = "Dump snmp walks in various formats"
     s.require_paths = [ 'lib' ]
     s.bindir = 'bin'
     s.executables << 'snmpdumper'
@@ -73,6 +75,7 @@ file "#{package_dir}/#{gem_file}" => SOURCE_FILES + [ package_dir ] do
     s.author = "Sebastian de Castelberg"
     s.email = 'snmpdumper@kpricorn.org'
     s.homepage = 'http://github.com/sdecastelberg/snmpdumper'
+    DEPENDENCIES.each {|dep| s.add_dependency dep[0], dep[1] }
   end
   Gem::Builder.new(spec).build
   mv gem_file, "#{package_dir}/#{gem_file}"

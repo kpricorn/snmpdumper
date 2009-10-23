@@ -70,7 +70,7 @@ module SnmpDumper
           #{line}\n
           Format for input:\n
           <numerical oid> = <Type>: <value>\n
-          Example: .1.3.6.1.2.1.1.1.0 = STRING: Linux lom0.taa-edu.local 2.6.17.6 #1 SMP Thu Mar 8 15:32:13 CET 2007 i686\n
+          Example: .1.3.6.1.2.1.1.1.0 = STRING: Linux host.local 2.6.17.6 #1 SMP Thu Mar 8 15:32:13 CET 2007 i686\n
           snmpwalk command example: snmpwalk -v 3 -u user -A PW -X PW -a MD5 -x DES -l authPriv -On -Oa 192.168.1.1" unless @options.force
         end
 
