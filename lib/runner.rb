@@ -1,4 +1,5 @@
 require 'walker'
+require 'snmpwalk_reader'
 require 'options'
 
 Dir.glob(File.join(File.dirname(__FILE__), 'dumper/*.rb')).each {|f| require f }
@@ -11,20 +12,26 @@ module SnmpDumper
 
     def run
       begin
-        walker = Walker.new(@options.options)
+        ## interactive shell?
+        if !$stdin.tty? || @options.options.inputfile then
+          walker = SnmpwalkReader.new(@options.options)
+        else
+          walker = Walker.new(@options.options)
+        end
+
         dumper = SnmpDumper.const_get(@options.options.dumper)::new(@options.options)
 
         walker.walk(dumper)
 
-        if @options.options.filename
-          File.open(@options.options.filename, 'w') { |f| f.write(dumper.dump) }  
+        if @options.options.out_filename
+          File.open(@options.options.out_filename, 'w') { |f| f.write(dumper.dump) }  
         else
           puts dumper.dump
         end
 
       rescue Exception => e
         STDERR.puts e.message
-        raise e
+        STDERR.puts e.backtrace.join("\n") if $DEBUG
         exit(-1)
       end
       exit(0)

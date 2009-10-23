@@ -11,7 +11,7 @@ module SnmpDumper
     if value =~ /[[:cntrl:]]/ then
       value_set.JSVALUE("value" => value.unpack('H*').first.upcase.scan(/.{1,2}/).join(" "), "hexa" => 1)
     else
-      value_set.JSVALUE("value" => value, "hexa" => 0)
+      value_set.JSVALUE("value" => "foo")
     end
   end
 
@@ -40,7 +40,8 @@ module SnmpDumper
     SNMP::IpAddress => {:syntax => "IPADDRESS", :callback => GENERIC_VALUE_CALLBACK},
     SNMP::ObjectId => {:syntax => "OBJECTIDENTIFIER", :callback => GENERIC_VALUE_CALLBACK},
     SNMP::OctetString => {:syntax => "OCTETSTRING", :callback => OCTETSTRING_VALUE_CALLBACK},
-    SNMP::TimeTicks => {:syntax => "TIMETICKS", :callback => TIMETICKS_VALUE_CALLBACK}
+    SNMP::TimeTicks => {:syntax => "TIMETICKS", :callback => TIMETICKS_VALUE_CALLBACK},
+    String => {:syntax => "OCTETSTRING", :callback => GENERIC_VALUE_CALLBACK},
   }
   
   class SnmpVar
@@ -67,10 +68,17 @@ module SnmpDumper
     attr_accessor :model
     attr_accessor :category
 
+    def initialize(options)
+      @model = options.model
+      @category = options.category
+      @snmp_vars = Hash.new
+    end
+
     def dump
       builder = Builder::XmlMarkup.new(:indent=>2)
-      builder.JSSNMPDEVICE("category" => @category, "model" => @model) do |jssnmpdevice|
-        self.snmp_vars.values.each do |snmp_var|
+      
+      builder.JSSNMPDEVICE("category" => @category, "model" => get_model) do |jssnmpdevice|
+        @snmp_vars.values.each do |snmp_var|
           snmp_var.dump(jssnmpdevice)
         end
       end
@@ -82,11 +90,11 @@ module SnmpDumper
       @snmp_vars[args[:name]].values << args[:value]
     end
 
-    def initialize(options)
-      @model = options.model
-      @category = options.category
-      @snmp_vars = Hash.new
+    def get_model
+      return @model if @model
+      m = @snmp_vars[".1.3.6.1.2.1.1.1.0"]
+      return "Unknown Model" unless m
+      m.values.first
     end
-
   end
 end

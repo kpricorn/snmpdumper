@@ -11,7 +11,7 @@ module SnmpDumper
     DEFAULT_WALKS = 3
 
     DEFAULT_COMMUNITY = "public"
-    DEFAULT_CATEGORY = "snmpdumper"
+    DEFAULT_CATEGORY = "Unknown Category"
     DEFAULT_DUMPER = "JalasoftDumper"
     
     attr_reader :options
@@ -87,7 +87,7 @@ module SnmpDumper
       @options.dumper = DEFAULT_DUMPER
 
       opts = OptionParser.new do |opts|
-        opts.banner = "Usage: snmpdumper [options] host [oids]"
+        opts.banner = "Usage: snmpdumper [options] [host] [oids]"
 
         opts.separator ""        
         opts.separator "Specific options:"
@@ -104,8 +104,12 @@ module SnmpDumper
           @options.walks = walks
         end
 
-        opts.on("-o", "--output FILENAME", "file to save SNMP dump") do |filename|
-          @options.filename = filename
+        opts.on("-O", "--output FILENAME", "file to save SNMP dump") do |out_filename|
+          @options.out_filename = out_filename
+        end
+        
+        opts.on("-I", "--input FILENAME", "file with output of snmpwalk") do |in_filename|
+          @options.in_filename = in_filename
         end
         
         opts.on("-m", "--model MODELNAME", "model name (Default: dynamically taken from sysDescr)") do |model|
@@ -160,6 +164,10 @@ module SnmpDumper
         opts.on("-d", "--[no-]debug", "print debug messages") do |d|
           $DEBUG = d
         end
+        
+        opts.on("-f", "--force", "do not stop on errors") do |f|
+          @options.force = f
+        end
 
         opts.on("-h", "--help", "display this help message") do 
           puts opts
@@ -177,7 +185,7 @@ module SnmpDumper
           @options.version == :SNMPv3 && 
           (@options.auth_passphrase.nil? || @options.privacy_passphrase.nil?)
 
-          raise OptionParser::MissingArgument.new("No hostname provided") if argv.empty?
+          raise OptionParser::MissingArgument.new("No hostname provided") if $stdin.tty? && argv.empty? && !@options.in_filename
 
           @options.host = argv.shift
           @options.oids = argv unless argv.empty?
