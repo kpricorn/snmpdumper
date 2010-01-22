@@ -1,13 +1,19 @@
 require 'walker'
 require 'snmpwalk_reader'
-require 'options'
+require 'config'
 
 Dir.glob(File.join(File.dirname(__FILE__), 'dumper/*.rb')).each {|f| require f }
 
 module SnmpDumper
   class Runner
     def initialize(argv)
-      @options = Options.new(argv)
+      begin
+        @options = Config.new(argv)
+        rescue Exception => e
+          STDERR.puts e.message
+          STDERR.puts e.backtrace.join("\n") if $DEBUG
+          exit(-1)
+        end
     end
 
     def run

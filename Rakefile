@@ -1,8 +1,8 @@
 require 'rubygems'
 require 'rake'
 
-PACKAGE_NAME    = "snmpdumper"
-PACKAGE_VERSION = "0.0.1"
+PACKAGE_NAME            = "snmpdumper"
+PACKAGE_VERSION         = "0.0.3"
 
 SOURCE_FILES = FileList.new do |fl|
   [ "bin", "lib", "test" ].each do |dir|
@@ -16,8 +16,6 @@ PACKAGE_FILES = FileList.new do |fl|
   fl.include "LICENSE"
   fl.include SOURCE_FILES
 end
-
-Gem.manage_gems
 
 desc "Default task"
 task :default => [ :package ]
