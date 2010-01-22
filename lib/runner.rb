@@ -19,7 +19,7 @@ module SnmpDumper
     def run
       begin
         ## interactive shell?
-        if !$stdin.tty? || @options.options.inputfile then
+        if !$stdin.tty? || @options.options.in_filename then
           walker = SnmpwalkReader.new(@options.options)
         else
           walker = Walker.new(@options.options)
