@@ -2,7 +2,7 @@ require 'rubygems'
 require 'rake'
 
 PACKAGE_NAME    = "snmpdumper"
-PACKAGE_VERSION = "0.0.3"
+PACKAGE_VERSION = "0.0.4"
 DEPENDENCIES = [
   ["snmp", "1.0.2" ], 
   ["builder", "2.1.2"]
