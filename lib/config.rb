@@ -3,7 +3,7 @@ require 'ostruct'
 require 'pp'
 
 module SnmpDumper
-  class Options
+  class Config
     SNMP_VERSIONS = {"1" => :SNMPv1, "2c" => :SNMPv2c, "3" => :SNMPv3}
     DEFAULT_PORT = 161
 
@@ -181,6 +181,9 @@ module SnmpDumper
 
         begin
           opts.parse!(argv)
+          
+          raise NotImplementedError.new("SNMPv3 not yet implemented by snmplib") if @options.version == :SNMPv3
+          
           raise OptionParser::MissingArgument.new("Please provide AUTH and PRIVACY passphrase") if 
           @options.version == :SNMPv3 && 
           (@options.auth_passphrase.nil? || @options.privacy_passphrase.nil?)
@@ -196,7 +199,6 @@ module SnmpDumper
           STDERR.puts e.message, "\n", opts
           exit(-1)
         end
-
 
       end #OptionParser.new
 
