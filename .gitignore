@@ -2,3 +2,4 @@ pkg
 rdoc
 .DS_Store
 *.swp
+.rake_tasks~
