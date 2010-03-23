@@ -17,7 +17,7 @@ module SnmpDumper
           raise value if Regexp.last_match(0).nil?
           SNMP::TimeTicks.new(Integer(Regexp.last_match(1)))
           }, "INTEGER" => lambda { |value|
-            /^(.*\()*(\d+)(\))*$/ =~ value
+            /^(.*\()*(-?\d+)(\))*$/ =~ value
             return nil if Regexp.last_match(0).nil?
             SNMP::Integer.new(Integer(Regexp.last_match(2)))
             },
